@@ -268,9 +268,12 @@ if (env.isJailbroken) NSLog(@"越狱: %@", env.jailbreakType);
 
 ---
 
-## 许可
+## 实现与许可
 
-MIT。后台保活的原始代码取自 [dsh-go](https://github.com/ccch1mneyyy/dsh-Go) 社区 fork（AGPL-3.0），
-改写与补充部分按 MIT 发布；环境探测与系统 shell 部分为本仓库原创。
+本仓库代码按 **MIT** 发布，可自由用于闭源项目。
+
+这里用到的技术手段——静音音频循环、持续定位、BGTaskScheduler、越狱 launchd、
+越狱/巨魔环境探测、`posix_spawn` 执行命令——都是 iOS 平台上公开的通用做法，
+被大量同类工具使用，不属于任何单一项目专有。具体代码为本仓库自行编写实现。
 
 详见 [LICENSE](LICENSE)。
