@@ -2,7 +2,12 @@
 //  keep_alive.dart
 //  BackgroundKeepAlive 的 Dart 侧封装。
 //
-//  复制到 lib/runtime/keep_alive.dart 直接用。
+//  复制到 lib/ 直接用：
+//    const ka = BackgroundKeepAlive();
+//    await ka.setAudio(true);
+//    await ka.setLocation(true);
+//    final s = await ka.status();
+//
 //  没有原生实现（Android / 鸿蒙 / 桌面 / Web）时所有方法静默返回关闭状态，
 //  不会抛异常，所以可以无条件调用。
 //
@@ -43,10 +48,12 @@ class KeepAliveStatus {
 }
 
 class BackgroundKeepAlive {
-  const BackgroundKeepAlive();
+  /// 与 iOS 侧 KeepAliveChannel.channelName 保持一致。改这里时原生侧同步改。
+  static const String defaultChannelName = 'ioskit/keepalive';
 
-  /// 与 iOS 侧 KeepAliveChannel.channelName 保持一致
-  static const _channel = MethodChannel('dshgo/keepalive');
+  final MethodChannel _channel;
+  const BackgroundKeepAlive({String channelName = defaultChannelName})
+      : _channel = MethodChannel(channelName);
 
   /// 当前状态。没有原生实现时返回全关，不报错。
   Future<KeepAliveStatus> status() async {
