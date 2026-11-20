@@ -9,7 +9,7 @@
     <!-- ===== 静音音频保活必需 ===== -->
     <key>UIBackgroundModes</key>
     <array>
-        <!-- 官方 dsh-go 已有 audio；其他项目如果没有就加上 -->
+        <!-- 已有 audio 就保留；没有才加 -->
         <string>audio</string>
         <!-- 用定位保活才需要 -->
         <string>location</string>
@@ -22,7 +22,7 @@
 
     <!-- 只在前台用定位时（如果只想要「使用期间」就不需要 Always 那条） -->
     <key>NSLocationWhenInUseUsageDescription</key>
-    <string>Reads your location once when you approve a request from the on-device engine.</string>
+    <string>Reads your location once when you approve a request from the app.</string>
 
     <!-- ===== BGTaskScheduler 必需 ===== -->
     <!-- 每个 identifier 必须和 KeepAliveTask.register(id:) 完全一致，区分大小写 -->
