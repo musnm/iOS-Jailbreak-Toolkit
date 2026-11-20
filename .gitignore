@@ -1,0 +1,16 @@
+.DS_Store
+build/
+*.xcuserstate
+xcuserdata/
+.idea/
+*.log
+
+# Xcode / Swift
+DerivedData/
+*.xcworkspace/xcshareddata/IDEWorkspaceChecks.plist
+.swiftpm/
+
+# Dart / Flutter
+.dart_tool/
+.packages
+pubspec.lock
