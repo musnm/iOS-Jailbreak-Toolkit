@@ -19,3 +19,26 @@ AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
 LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
+
+---
+
+## 来源与许可说明
+
+本仓库合并自两个仓库：
+
+- `musnm/iOS-BackgroundKeepAlive`（后台保活部分）
+- `musnm/iOS-Jailbreak-Toolkit`（环境探测与系统 shell 部分）
+
+### 后台保活部分
+
+原始代码取自 [dsh-go](https://github.com/ccch1mneyyy/dsh-Go) 的社区 fork（AGPL-3.0），
+后续改写与补充部分按 MIT 发布。
+
+### 环境探测与系统 shell 部分
+
+本仓库原创实现，按 MIT 发布。
+
+### 使用注意
+
+如果要把含 AGPL-3.0 来源的保活代码用进闭源项目，请自行评估 AGPL 的传染性要求，
+或联系原作者确认授权。环境探测与系统 shell 部分无此约束。
