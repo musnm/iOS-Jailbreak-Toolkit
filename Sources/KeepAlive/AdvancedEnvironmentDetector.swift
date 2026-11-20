@@ -294,7 +294,7 @@ public final class AdvancedEnvironmentDetector {
     static func spawnProbe(_ shell: String) -> Bool {
         let process = Process()
         process.executableURL = URL(fileURLWithPath: shell)
-        process.arguments = ["-c", "echo dshgo-env-probe"]
+        process.arguments = ["-c", "echo ioskit-env-probe"]
         process.environment = ["PATH": "/var/jb/usr/bin:/var/jb/bin:/usr/bin:/bin:/usr/sbin:/sbin"]
         let pipe = Pipe()
         process.standardOutput = pipe
@@ -306,7 +306,7 @@ public final class AdvancedEnvironmentDetector {
         }
         let data = pipe.fileHandleForReading.readDataToEndOfFile()
         process.waitUntilExit()
-        return String(data: data, encoding: .utf8)?.contains("dshgo-env-probe") == true
+        return String(data: data, encoding: .utf8)?.contains("ioskit-env-probe") == true
     }
 
     /// 是不是通过巨魔签名安装的：看有没有 platform-application entitlement。
