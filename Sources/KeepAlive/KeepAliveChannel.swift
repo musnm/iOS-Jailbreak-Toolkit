@@ -1,31 +1,36 @@
 //
 //  KeepAliveChannel.swift
-//  把 BackgroundKeepAlive 暴露给 Flutter（MethodChannel: "dshgo/keepalive"）
+//  把 BackgroundKeepAlive 暴露给 Flutter（默认 MethodChannel: "ioskit/keepalive"）
 //
 //  注册（AppDelegate.swift 的 didFinishLaunchingWithOptions 里）：
 //      if let registrar = self.registrar(forPlugin: "KeepAliveChannel") {
 //          KeepAliveChannel.register(with: registrar)
 //      }
 //
+//  自定义通道名（推荐，避免同机多 App 冲突）：
+//      KeepAliveChannel.register(with: registrar, name: "yourapp/keepalive")
+//
 //  Dart 端调用：
-//      MethodChannel('dshgo/keepalive').invokeMethod('status')
+//      MethodChannel('ioskit/keepalive').invokeMethod('status')
 //      ... invokeMethod('setAudio', {'on': true})
 //      ... invokeMethod('setLocation', {'on': true})
 //      ... invokeMethod('setAll', {'audio': true, 'location': true})
-//
-//  改通道名：直接改下面的 channelName 常量，Dart 侧同步改。
 //
 import Flutter
 import UIKit
 
 public final class KeepAliveChannel: NSObject, FlutterPlugin {
 
-    /// 与 Dart 侧 MethodChannel 名保持一致
-    public static let channelName = "dshgo/keepalive"
+    /// Dart 侧的默认通道名。可改。
+    public static let channelName = "ioskit/keepalive"
 
     public static func register(with registrar: FlutterPluginRegistrar) {
-        let channel = FlutterMethodChannel(name: channelName,
-                                           binaryMessenger: registrar.messenger())
+        register(with: registrar, name: channelName)
+    }
+
+    /// 用自定义通道名注册。
+    public static func register(with registrar: FlutterPluginRegistrar, name: String) {
+        let channel = FlutterMethodChannel(name: name, binaryMessenger: registrar.messenger())
         registrar.addMethodCallDelegate(KeepAliveChannel(), channel: channel)
     }
 
