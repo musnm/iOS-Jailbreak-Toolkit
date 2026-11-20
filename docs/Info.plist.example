@@ -1,0 +1,64 @@
+# Info.plist 需要的键
+
+把下面各项合并进 `ios/Runner/Info.plist` 的顶层 `<dict>` 里。只加你实际要用的部分。
+
+## 后台保活
+
+```xml
+<key>UIBackgroundModes</key>
+<array>
+  <string>audio</string>
+  <string>location</string>
+</array>
+
+<key>NSLocationWhenInUseUsageDescription</key>
+<string>Reads your location once when you approve a request from the on-device engine.</string>
+
+<key>NSLocationAlwaysAndWhenInUseUsageDescription</key>
+<string>在后台维持引擎运行需要持续定位权限；定位精度已降到最低，仅用于保持后台唤醒，不保存坐标。</string>
+```
+
+> `location` 后台模式 + `Always` 授权才能让定位保活在后台生效。
+> 只在 `WhenInUse` 下调用，App 进后台后定位会立即停。
+
+## BGTaskScheduler
+
+```xml
+<key>BGTaskSchedulerPermittedIdentifiers</key>
+<array>
+  <string>com.example.yourapp.refresh</string>
+  <string>com.example.yourapp.processing</string>
+</array>
+```
+
+标识符要和 `KeepAliveTask.swift` 里注册的一致。
+
+## 环境探测
+
+`canOpenScheme` 依赖下面的白名单；**不加这个键，`canOpenURL` 永远返回 false**，巨魔/Sileo 就查不出来。
+
+```xml
+<key>LSApplicationQueriesSchemes</key>
+<array>
+  <string>trollstore</string>
+  <string>sileo</string>
+  <string>cydia</string>
+  <string>zbra</string>
+  <string>apple-magnifier</string>
+</array>
+```
+
+## 兼容性
+
+想让老系统（iOS 14 的越狱设备）也能装：
+
+```xml
+<key>MinimumOSVersion</key>
+<string>14.0</string>
+```
+
+## 说明
+
+- `audio` + `location` 同时开，系统会当成「正在导航/播放」处理，后台存活明显更久，但耗电和上架风险都上升。
+- 自己签名（TrollStore / AltStore / Sideloadly）不受 App Store 审核约束。
+- `apple-magnifier`（放大镜）在部分越狱工具链里会随包安装，用来辅助判断。
