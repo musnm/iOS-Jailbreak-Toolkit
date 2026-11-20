@@ -2,12 +2,12 @@
 
 iOS 没有 Android 那种前台服务，App 进后台后很快被挂起；而越狱 / 巨魔设备上还有一批普通 App 拿不到的能力。
 
-这个仓库把两部分合成一套：
+这个仓库提供两部分可直接复用的能力：
 
 - **后台保活** —— 能合法延缓挂起的手段（未越狱也能用）
 - **环境探测 + 系统 shell** —— 越狱 / 巨魔设备才能拿到的能力
 
-全部是可直接复用的 Swift + Dart 代码，拖进工程即可。
+全部是 **通用 iOS 实现**，不绑定任何特定 App。任意 iOS / Flutter 项目都能用，改个通道名即可。
 
 ---
 
@@ -38,11 +38,11 @@ iOS 没有 Android 那种前台服务，App 进后台后很快被挂起；而越
 ```
 Sources/KeepAlive/
   BackgroundKeepAlive.swift          静音音频 + 定位 + 状态查询
-  KeepAliveChannel.swift             Flutter 通道 dshgo/keepalive
+  KeepAliveChannel.swift             Flutter 通道 ioskit/keepalive
   KeepAliveTask.swift                BGTaskScheduler 封装
   LaunchdKeepAlive.md                越狱 launchd 真常驻方案
   AdvancedEnvironmentDetector.swift  越狱/巨魔/注入/沙箱探测主体
-  AdvancedEnvironmentChannel.swift   Flutter 通道 dshgo/advanced_env
+  AdvancedEnvironmentChannel.swift   Flutter 通道 ioskit/advanced_env
   SystemShellChannel.swift           命令执行 / 列目录 / 读文件
 flutter/
   keep_alive.dart                    保活的 Dart 封装
@@ -53,6 +53,38 @@ docs/
 ```
 
 所有 Swift 文件都可以直接拖进 Xcode 工程；非 Flutter 项目不需要 `*Channel.swift`（那是通道桥）。
+
+---
+
+## 通道名
+
+三个通道的默认名都带 `ioskit/` 前缀，**建议换成你自己项目的前缀**：
+
+| 通道 | 默认名 | 建议换成 |
+|---|---|---|
+| 保活 | `ioskit/keepalive` | `yourapp/keepalive` |
+| 环境探测 | `ioskit/advanced_env` | `yourapp/advanced_env` |
+| 系统 shell | `ioskit/system_shell` | `yourapp/system_shell` |
+
+改法：
+
+**Swift 侧** —— 改 `channelName` 常量，或注册时传名字：
+
+```swift
+KeepAliveChannel.register(with: r, name: "yourapp/keepalive")
+AdvancedEnvironmentChannel.register(with: r, name: "yourapp/advanced_env")
+SystemShellChannel.register(with: r, name: "yourapp/system_shell")
+```
+
+**Dart 侧** —— 改 `defaultChannelName`，或调用时传 `channelName`：
+
+```dart
+const ka = BackgroundKeepAlive(channelName: 'yourapp/keepalive');
+final env = await AdvancedEnvironment.probe(channelName: 'yourapp/advanced_env');
+final r = await SystemShell.run('ls', channelName: 'yourapp/system_shell');
+```
+
+两边必须一致，否则抛 `MissingPluginException`。
 
 ---
 
@@ -92,7 +124,20 @@ Flutter 3.x 的 `FlutterAppDelegate` 提供了 `registrar(forPlugin:)`；新版 
 
 ### 4. 调用
 
-见下面「用法」。
+```dart
+// 保活
+const keepAlive = BackgroundKeepAlive();
+await keepAlive.setAudio(true);
+await keepAlive.setLocation(true);
+final status = await keepAlive.status();
+
+// 探测
+final env = await AdvancedEnvironment.probe();
+print(env.headline);
+
+// 系统命令
+final r = await SystemShell.run('ls -la /var/mobile');
+```
 
 ---
 
@@ -103,11 +148,9 @@ Flutter 3.x 的 `FlutterAppDelegate` 提供了 `registrar(forPlugin:)`；新版 
 ```dart
 const ka = BackgroundKeepAlive();
 
-// 读状态
 final s = await ka.status();
 print('音频: ${s.audio}  定位: ${s.location}  授权: ${s.locationAuthorization}');
 
-// 开音频
 final ok = await ka.setAudio(true);
 
 // 开定位（首次会弹权限）
@@ -116,7 +159,6 @@ if (!okLoc) {
   // 用户可能只给了「使用期间」，需要引导去设置改「始终允许」
 }
 
-// 全关
 await ka.stopAll();
 ```
 
@@ -129,7 +171,7 @@ await ka.stopAll();
   ⚠ 这不是常驻：内存紧张时系统仍会回收。耗电会增加，按需开启。
 ```
 
-App 回到前台时刷新状态（用户可能去设置里改过权限）：
+App 回到前台时刷新状态：
 
 ```dart
 AppLifecycleListener(onResume: () => _refreshKeepAlive());
@@ -153,7 +195,6 @@ print(env.sandboxDeniedPaths);                // 沙箱拒绝读的系统路径
 final result = await SystemShell.run('ls -la /var/mobile');
 if (result.ok) print(result.stdout);
 
-// 或直接读文件
 final hosts = await SystemShell.readBytes('/etc/hosts');
 print(hosts.text);
 ```
@@ -194,8 +235,6 @@ if (env.isJailbroken) NSLog(@"越狱: %@", env.jailbreakType);
 ---
 
 ## 探测项清单
-
-`AdvancedEnvironmentDetector` 覆盖的检查：
 
 | 检查 | 字段 | 说明 |
 |---|---|---|
@@ -265,6 +304,7 @@ if (env.isJailbroken) NSLog(@"越狱: %@", env.jailbreakType);
 | iOS 巨魔（TrollStore） | ✅ | ✅ | ✅ |
 | iOS 未越狱 / 自签 | ✅ | 部分项固定为 false | ❌ |
 | iOS 模拟器 | ✅ | 可跑，无实际意义 | ❌ |
+| Android / 鸿蒙 / 桌面 | ❌（Dart 侧静默降级） | ❌ | ❌ |
 
 ---
 
@@ -274,6 +314,7 @@ if (env.isJailbroken) NSLog(@"越狱: %@", env.jailbreakType);
 
 这里用到的技术手段——静音音频循环、持续定位、BGTaskScheduler、越狱 launchd、
 越狱/巨魔环境探测、`posix_spawn` 执行命令——都是 iOS 平台上公开的通用做法，
-被大量同类工具使用，不属于任何单一项目专有。具体代码为本仓库自行编写实现。
+被大量同类工具使用，不属于任何单一项目专有。具体代码为本仓库自行编写实现，
+也不依赖任何特定 App 或框架。
 
 详见 [LICENSE](LICENSE)。
