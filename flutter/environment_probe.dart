@@ -6,8 +6,8 @@
 //   if (env.isJailbroken) print('越狱形态: ${env.jailbreakType}');
 //   final out = await SystemShell.run('ls -la /var/mobile');
 //
-// 两个通道名必须和 Swift 侧一致：
-//   dshgo/advanced_env    dshgo/system_shell
+// 两个通道名必须和 Swift 侧一致（下面是默认值，可在调用时传 channelName 覆盖）：
+//   ioskit/advanced_env    ioskit/system_shell
 
 import 'dart:convert';
 import 'dart:typed_data';
@@ -63,26 +63,32 @@ class AdvancedEnvironment {
     return parts.join(' · ');
   }
 
-  static const MethodChannel _channel = MethodChannel('dshgo/advanced_env');
+  /// 与 iOS 侧 AdvancedEnvironmentChannel.channelName 保持一致。改这里时原生侧同步改。
+  static const String defaultChannelName = 'ioskit/advanced_env';
 
   /// 取探测结果。[cached] 为 false 时强制重新探测。
-  static Future<AdvancedEnvironment> probe({bool cached = true}) async {
-    final value = await _channel.invokeMethod<Map>('detect', {'cached': cached});
+  static Future<AdvancedEnvironment> probe({
+    bool cached = true,
+    String channelName = defaultChannelName,
+  }) async {
+    final value =
+        await MethodChannel(channelName).invokeMethod<Map>('detect', {'cached': cached});
     return AdvancedEnvironment(Map<String, dynamic>.from(value ?? const {}));
   }
 
   /// 清掉缓存，下次 probe() 重新探测。
-  static Future<void> invalidate() => _channel.invokeMethod<void>('invalidate');
+  static Future<void> invalidate({String channelName = defaultChannelName}) =>
+      MethodChannel(channelName).invokeMethod<void>('invalidate');
 
   /// 一行结论（原生侧生成）。
-  static Future<List<String>> summary() async {
-    final value = await _channel.invokeMethod<List>('summary');
+  static Future<List<String>> summary({String channelName = defaultChannelName}) async {
+    final value = await MethodChannel(channelName).invokeMethod<List>('summary');
     return (value ?? const []).cast<String>();
   }
 
   /// 每项细节。
-  static Future<List<String>> detail() async {
-    final value = await _channel.invokeMethod<List>('detail');
+  static Future<List<String>> detail({String channelName = defaultChannelName}) async {
+    final value = await MethodChannel(channelName).invokeMethod<List>('detail');
     return (value ?? const []).cast<String>();
   }
 }
@@ -121,11 +127,12 @@ class DirEntry {
 
 /// 系统 shell。只有越狱 / 巨魔环境下的调用才可能成功。
 class SystemShell {
-  static const MethodChannel _channel = MethodChannel('dshgo/system_shell');
+  /// 与 iOS 侧 SystemShellChannel.channelName 保持一致。改这里时原生侧同步改。
+  static const String defaultChannelName = 'ioskit/system_shell';
 
   /// 当前可用的 shell 路径，null 表示没有。
-  static Future<String?> shellPath() async {
-    final value = await _channel.invokeMethod<Map>('shell');
+  static Future<String?> shellPath({String channelName = defaultChannelName}) async {
+    final value = await MethodChannel(channelName).invokeMethod<Map>('shell');
     return value?['path'] as String?;
   }
 
@@ -136,8 +143,9 @@ class SystemShell {
     Map<String, String>? env,
     int timeoutMs = 20000,
     int maxBytes = 256 * 1024,
+    String channelName = defaultChannelName,
   }) async {
-    final value = await _channel.invokeMethod<Map>('run', {
+    final value = await MethodChannel(channelName).invokeMethod<Map>('run', {
       'command': command,
       if (cwd != null) 'cwd': cwd,
       if (env != null) 'env': env,
@@ -148,8 +156,12 @@ class SystemShell {
   }
 
   /// 列目录。
-  static Future<List<DirEntry>> listDirectory(String path) async {
-    final value = await _channel.invokeMethod<Map>('listDirectory', {'path': path});
+  static Future<List<DirEntry>> listDirectory(
+    String path, {
+    String channelName = defaultChannelName,
+  }) async {
+    final value =
+        await MethodChannel(channelName).invokeMethod<Map>('listDirectory', {'path': path});
     final entries = (value?['entries'] as List?) ?? const [];
     return entries
         .map((e) => DirEntry(Map<String, dynamic>.from(e as Map)))
@@ -160,8 +172,9 @@ class SystemShell {
   static Future<({String? text, Uint8List bytes, bool truncated})> readBytes(
     String path, {
     int cap = 64 * 1024,
+    String channelName = defaultChannelName,
   }) async {
-    final value = await _channel.invokeMethod<Map>('readBytes', {
+    final value = await MethodChannel(channelName).invokeMethod<Map>('readBytes', {
       'path': path,
       'cap': cap,
     });
