@@ -1,21 +1,17 @@
 //
 //  SystemShellChannel.swift
-//  把系统 shell 能力暴露给 Flutter（MethodChannel: "dshgo/system_shell"）
+//  把系统 shell 能力暴露给 Flutter（默认 MethodChannel: "ioskit/system_shell"）
 //
 //  只有在越狱 / 巨魔环境下才可能真正执行；正式环境下每次调用都会
 //  返回带 error 的字典，不会抛异常，Dart 侧按失败处理即可。
 //
+//  自定义通道名：
+//      SystemShellChannel.register(with: registrar, name: "yourapp/system_shell")
+//
 //  Dart 端：
-//    final ch = MethodChannel('dshgo/system_shell');
-//    await ch.invokeMethod('run', {
-//      'command': 'ls -la',
-//      'cwd': '/var/mobile',        // 可选
-//      'env': {'LANG': 'C'},        // 可选，会合并进默认 PATH
-//      'timeoutMs': 20000,          // 可选
-//      'maxBytes': 262144,          // 可选
-//    });
-//    await ch.invokeMethod('listDirectory', {'path': '/var/mobile'});
-//    await ch.invokeMethod('readBytes', {'path': '/etc/hosts', 'cap': 65536});
+//    final r = await SystemShell.run('ls -la', cwd: '/var/mobile');
+//    final entries = await SystemShell.listDirectory('/var/mobile');
+//    final file = await SystemShell.readBytes('/etc/hosts');
 //
 import Flutter
 import UIKit
@@ -23,8 +19,8 @@ import Darwin
 
 public final class SystemShellChannel: NSObject, FlutterPlugin {
 
-    /// 与 Dart 侧 MethodChannel 名保持一致
-    public static let channelName = "dshgo/system_shell"
+    /// Dart 侧的默认通道名。可改。
+    public static let channelName = "ioskit/system_shell"
 
     /// 默认 PATH：越狱根优先，其次是系统路径
     static let defaultPath = "/var/jb/usr/bin:/var/jb/bin:/usr/bin:/bin:/usr/sbin:/sbin"
@@ -37,7 +33,12 @@ public final class SystemShellChannel: NSObject, FlutterPlugin {
     private static var cachedShell: String?
 
     public static func register(with registrar: FlutterPluginRegistrar) {
-        let channel = FlutterMethodChannel(name: channelName, binaryMessenger: registrar.messenger())
+        register(with: registrar, name: channelName)
+    }
+
+    /// 用自定义通道名注册。
+    public static func register(with registrar: FlutterPluginRegistrar, name: String) {
+        let channel = FlutterMethodChannel(name: name, binaryMessenger: registrar.messenger())
         registrar.addMethodCallDelegate(SystemShellChannel(), channel: channel)
     }
 
