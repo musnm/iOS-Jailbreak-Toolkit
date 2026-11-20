@@ -1,25 +1,32 @@
 //
 //  AdvancedEnvironmentChannel.swift
-//  把环境探测暴露给 Flutter（MethodChannel: "dshgo/advanced_env"）
+//  把环境探测暴露给 Flutter（默认 MethodChannel: "ioskit/advanced_env"）
+//
+//  自定义通道名：
+//      AdvancedEnvironmentChannel.register(with: registrar, name: "yourapp/advanced_env")
 //
 //  Dart 端：
-//    final ch = MethodChannel('dshgo/advanced_env');
-//    final env = await ch.invokeMethod('detect');              // 走缓存
-//    final fresh = await ch.invokeMethod('detect', {'cached': false});
-//    await ch.invokeMethod('invalidate');                      // 清缓存
-//    final lines = await ch.invokeMethod('summary');           // 一行结论
-//    final detail = await ch.invokeMethod('detail');           // 详细项
+//    final env = await AdvancedEnvironment.probe();                    // 走缓存
+//    final fresh = await AdvancedEnvironment.probe(cached: false);     // 强制重探
+//    await AdvancedEnvironment.invalidate();                           // 清缓存
+//    final lines = await AdvancedEnvironment.summary();                // 一行结论
+//    final detail = await AdvancedEnvironment.detail();                // 详细项
 //
 import Flutter
 import UIKit
 
 public final class AdvancedEnvironmentChannel: NSObject, FlutterPlugin {
 
-    /// 与 Dart 侧 MethodChannel 名保持一致
-    public static let channelName = "dshgo/advanced_env"
+    /// Dart 侧的默认通道名。可改。
+    public static let channelName = "ioskit/advanced_env"
 
     public static func register(with registrar: FlutterPluginRegistrar) {
-        let channel = FlutterMethodChannel(name: channelName, binaryMessenger: registrar.messenger())
+        register(with: registrar, name: channelName)
+    }
+
+    /// 用自定义通道名注册。
+    public static func register(with registrar: FlutterPluginRegistrar, name: String) {
+        let channel = FlutterMethodChannel(name: name, binaryMessenger: registrar.messenger())
         registrar.addMethodCallDelegate(AdvancedEnvironmentChannel(), channel: channel)
     }
 
